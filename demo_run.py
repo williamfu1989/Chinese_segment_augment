@@ -12,6 +12,8 @@ from model import TrieNode
 from utils import get_stopwords, load_dictionary, generate_ngram, save_model, load_model
 from config import basedir
 
+import time
+
 
 def load_data(filename, stopwords):
     """
@@ -20,22 +22,30 @@ def load_data(filename, stopwords):
     :param stopwords:
     :return: 二维数组,[[句子1分词list], [句子2分词list],...,[句子n分词list]]
     """
+    start = time.time()
     data = []
     with open(filename, 'r') as f:
         for line in f:
             word_list = [x for x in jieba.cut(line.strip(), cut_all=False) if x not in stopwords]
             data.append(word_list)
+
+    end = time.time()
+    print ('loda_data:',end-start)
     return data
 
 
 def load_data_2_root(data):
     print('------> 插入节点')
-    for word_list in data:
+    for index,word_list in enumerate(data):
         # tmp 表示每一行自由组合后的结果（n gram）
         # tmp: [['它'], ['是'], ['小'], ['狗'], ['它', '是'], ['是', '小'], ['小', '狗'], ['它', '是', '小'], ['是', '小', '狗']]
+        start = time.time()
         ngrams = generate_ngram(word_list, 3)
         for d in ngrams:
             root.add(d)
+        end = time.time()
+        if index % 100 == 0:
+            print(index, '       ngrams:',end-start)
     print('------> 插入成功')
 
 
@@ -47,11 +57,13 @@ if __name__ == "__main__":
     else:
         dict_name = basedir + '/data/dict.txt'
         word_freq = load_dictionary(dict_name)
+        print("before root")
         root = TrieNode('*', word_freq)
         save_model(root, root_name)
 
     # 加载新的文章
-    filename = 'data/demo.txt'
+    filename = '/tmp/data.txt'
+    #filename = 'data/demo.txt'
     data = load_data(filename, stopwords)
     # 将新的文章插入到Root中
     load_data_2_root(data)
